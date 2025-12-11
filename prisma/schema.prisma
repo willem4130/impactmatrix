@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IdeaStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String   @default("#3b82f6")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ideas       Idea[]
+
+  @@index([name])
+}
+
+model Idea {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  effort        Int        @default(5) // 1-10 scale
+  businessValue Int        @default(5) // 1-10 scale
+  positionX     Float?     // Future: precise grid position
+  positionY     Float?     // Future: precise grid position
+  status        IdeaStatus @default(DRAFT)
+  categoryId    String?
+  category      Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([effort, businessValue])
+}

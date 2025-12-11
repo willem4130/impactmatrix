@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: impactmatrix-postgres
+    environment:
+      POSTGRES_USER: impactmatrix
+      POSTGRES_PASSWORD: impactmatrix
+      POSTGRES_DB: impactmatrix
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
