@@ -1,6 +1,7 @@
 'use client'
 
 import { Idea, Category } from '@prisma/client'
+import { useDraggable } from '@dnd-kit/core'
 import { Badge } from '@/components/ui/badge'
 
 type IdeaWithCategory = Idea & {
@@ -10,16 +11,36 @@ type IdeaWithCategory = Idea & {
 interface IdeaCardProps {
   idea: IdeaWithCategory
   style?: React.CSSProperties
+  isDragOverlay?: boolean
 }
 
-export function IdeaCard({ idea, style }: IdeaCardProps) {
+export function IdeaCard({ idea, style, isDragOverlay = false }: IdeaCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: idea.id,
+    disabled: isDragOverlay,
+  })
+
+  const draggableStyle = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined
+
   return (
     <div
-      className="absolute flex flex-col gap-1 rounded-lg border bg-card p-2 shadow-md transition-all hover:shadow-lg cursor-pointer"
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className="absolute flex flex-col gap-1 rounded-lg border bg-card p-2 shadow-md transition-all hover:shadow-lg cursor-grab active:cursor-grabbing"
       style={{
         ...style,
+        ...draggableStyle,
         width: '140px',
-        transform: 'translate(-50%, -50%)',
+        transform: isDragging
+          ? 'translate(-50%, -50%) scale(1.05)'
+          : style?.transform || 'translate(-50%, -50%)',
+        opacity: isDragging ? 0.5 : (style?.opacity ?? 1),
+        zIndex: isDragging ? 999 : 'auto',
       }}
     >
       <div className="flex items-start justify-between gap-1">

@@ -1,6 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { Idea, Category } from '@prisma/client'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  DragStartEvent,
+} from '@dnd-kit/core'
 import { IdeaCard } from './idea-card'
 import {
   GRID_SIZE,
@@ -9,6 +19,7 @@ import {
   GRID_HEIGHT,
   QUADRANTS,
   gridToPosition,
+  positionToGrid,
 } from '@/lib/grid-utils'
 
 type IdeaWithCategory = Idea & {
@@ -17,11 +28,60 @@ type IdeaWithCategory = Idea & {
 
 interface MatrixGridProps {
   ideas: IdeaWithCategory[]
+  onIdeaMove?: (ideaId: string, newEffort: number, newBusinessValue: number) => void
 }
 
-export function MatrixGrid({ ideas }: MatrixGridProps) {
+export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, delta } = event
+    const idea = ideas.find((i) => i.id === active.id)
+
+    if (idea && delta.x !== 0 && delta.y !== 0) {
+      const currentPosition = gridToPosition(idea.effort, idea.businessValue)
+      const newPosition = {
+        x: currentPosition.x + delta.x,
+        y: currentPosition.y + delta.y,
+      }
+
+      // Convert new pixel position back to grid coordinates
+      const { effort, businessValue } = positionToGrid(newPosition.x, newPosition.y)
+
+      // Only update if the position changed
+      if (effort !== idea.effort || businessValue !== idea.businessValue) {
+        onIdeaMove?.(idea.id, effort, businessValue)
+      }
+    }
+
+    setActiveId(null)
+  }
+
+  const handleDragCancel = () => {
+    setActiveId(null)
+  }
+
+  const activeIdea = activeId ? ideas.find((i) => i.id === activeId) : null
+
   return (
-    <div className="flex items-center gap-8">
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="flex items-center gap-8">
       {/* Y-axis label */}
       <div className="flex flex-col items-center justify-center h-full">
         <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
@@ -219,5 +279,19 @@ export function MatrixGrid({ ideas }: MatrixGridProps) {
         </div>
       </div>
     </div>
+
+      <DragOverlay>
+        {activeIdea ? (
+          <IdeaCard
+            idea={activeIdea}
+            isDragOverlay
+            style={{
+              cursor: 'grabbing',
+              opacity: 0.8,
+            }}
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }

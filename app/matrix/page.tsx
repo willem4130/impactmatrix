@@ -5,10 +5,23 @@ import { MatrixGrid } from '@/components/matrix/matrix-grid'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function MatrixPage() {
   const router = useRouter()
+  const utils = api.useUtils()
   const { data: ideas, isLoading, error, refetch } = api.idea.list.useQuery()
+
+  const updatePositionMutation = api.idea.updatePosition.useMutation({
+    onSuccess: () => {
+      utils.idea.list.invalidate()
+      toast.success('Idea position updated')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update idea position')
+      utils.idea.list.invalidate() // Revert to server state
+    },
+  })
 
   const handleCreateIdea = () => {
     router.push('/ideas')
@@ -16,6 +29,14 @@ export default function MatrixPage() {
 
   const handleRefresh = () => {
     refetch()
+  }
+
+  const handleIdeaMove = (ideaId: string, newEffort: number, newBusinessValue: number) => {
+    updatePositionMutation.mutate({
+      id: ideaId,
+      effort: newEffort,
+      businessValue: newBusinessValue,
+    })
   }
 
   if (error) {
@@ -62,7 +83,7 @@ export default function MatrixPage() {
         </div>
       ) : ideas && ideas.length > 0 ? (
         <div className="flex flex-col items-center">
-          <MatrixGrid ideas={ideas} />
+          <MatrixGrid ideas={ideas} onIdeaMove={handleIdeaMove} />
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
               Showing {ideas.length} {ideas.length === 1 ? 'idea' : 'ideas'}
