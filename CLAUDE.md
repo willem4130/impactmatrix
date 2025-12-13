@@ -85,10 +85,11 @@ Full hierarchical structure with cascade deletes:
 
 **Idea Model:**
 - id, title, description
-- effort (1-10), businessValue (1-10)
+- effort (1-10), businessValue (1-10), weight (1-10)
+- positionX, positionY (nullable - custom positioning)
 - impactMatrixId (required - scoped to matrix)
 - categoryId (optional relation)
-- status (draft, in-progress, completed)
+- status (DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED)
 - timestamps
 
 **Category Model:**
@@ -103,20 +104,31 @@ Full hierarchical structure with cascade deletes:
 **Interactive Grid (1200x650px):**
 - Wider aspect ratio to fit viewport without scrolling
 - 10x10 grid with rectangular cells (120px wide x 65px tall)
-- Drag & drop ideas to change effort/business value scores
+- **Free positioning:** Drag ideas anywhere on the grid (not just grid snapping)
+- Custom positions saved in positionX/positionY fields
 - Smooth dragging with reduced activation distance (5px)
 - Four quadrants: Quick Wins, Major Projects, Fill-Ins, Thankless Tasks
 
+**Position Drift Tracking:**
+- Shows when idea is manually positioned away from its calculated grid position
+- Drift indicator displays: Actual scores (E:7 V:8) vs Positioned location (E:8 V:6)
+- Amber Move badge with positioned E/V values
+- Per-item reset button to snap back to grid position
+- Batch "Reset All Positions" button
+- Tooltip shows both actual and positioned values
+
 **Inline Editing:**
-- Click on effort (E:) or business value (V:) badges to edit
+- Click on effort (E:), business value (V:), or weight (W:) badges to edit
 - Press Enter to save, Escape to cancel
 - Real-time updates with optimistic UI
 - Dragging disabled while editing
 
 **Ideas Side Panel:**
-- Toggle on/off with "Show/Hide Ideas Panel" button
+- Toggle on/off with "Show/Hide Ideas Panel" button (grouped with Ideas List button)
 - Lists all ideas sorted by priority (business value desc, then effort asc)
 - Shows quadrant classification for each idea
+- Shows drift indicator for manually positioned ideas
+- Full CRUD operations (create, edit, delete)
 - Color-coded by category
 - Links to full ideas list view
 - Fixed 320px width, full height scrollable
@@ -127,8 +139,10 @@ Full hierarchical structure with cascade deletes:
 - Ideas side panel - quick overview without navigation
 
 **Key Files:**
-- `/lib/grid-utils.ts` - Grid configuration (CELL_WIDTH, CELL_HEIGHT)
-- `/components/matrix/idea-card.tsx` - Inline editing for scores
-- `/components/matrix/ideas-side-panel.tsx` - Side panel component
-- `/components/ideas/idea-form-dialog.tsx` - Idea form with inline category creation
-- `/app/matrix/[id]/page.tsx` - Matrix page with side panel toggle and quick create
+- `/lib/grid-utils.ts` - Grid configuration, drift detection, position utilities
+- `/components/matrix/idea-card.tsx` - Card with inline editing (E/V/W) and drift indicator
+- `/components/matrix/matrix-grid.tsx` - Grid with free positioning support
+- `/components/matrix/ideas-side-panel.tsx` - Side panel with CRUD and drift display
+- `/components/ideas/idea-form-dialog.tsx` - Idea form with weight slider and inline category creation
+- `/app/matrix/[id]/page.tsx` - Matrix page with custom positioning, side panel, batch reset
+- `/server/api/routers/idea.ts` - tRPC router with updateCustomPosition, resetPosition, resetAllPositions
