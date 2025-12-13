@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Idea, IdeaStatus } from '@prisma/client'
-import { Plus, Filter, X } from 'lucide-react'
+import { Plus, Filter, X, ArrowLeft } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +15,7 @@ import {
 import { IdeasTable } from '@/components/ideas/ideas-table'
 import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
 import { toast } from 'sonner'
+import { useParams, useRouter } from 'next/navigation'
 
 const STATUS_LABELS: Record<IdeaStatus, string> = {
   DRAFT: 'Draft',
@@ -23,7 +24,11 @@ const STATUS_LABELS: Record<IdeaStatus, string> = {
   ARCHIVED: 'Archived',
 }
 
-export default function IdeasPage() {
+export default function MatrixIdeasPage() {
+  const params = useParams()
+  const router = useRouter()
+  const matrixId = params.id as string
+
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null)
   const [filterCategory, setFilterCategory] = useState<string | undefined>(undefined)
@@ -31,16 +36,19 @@ export default function IdeasPage() {
 
   const utils = api.useUtils()
 
+  const { data: matrix } = api.impactMatrix.get.useQuery({ id: matrixId })
+
   const { data: ideas, isLoading, error } = api.idea.list.useQuery({
+    impactMatrixId: matrixId,
     categoryId: filterCategory,
     status: filterStatus,
   })
 
-  const { data: categories } = api.category.list.useQuery()
+  const { data: categories } = api.category.list.useQuery({ impactMatrixId: matrixId })
 
   const createMutation = api.idea.create.useMutation({
     onSuccess: () => {
-      utils.idea.list.invalidate()
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
       setIsDialogOpen(false)
       toast.success('Idea created successfully')
     },
@@ -51,7 +59,7 @@ export default function IdeasPage() {
 
   const updateMutation = api.idea.update.useMutation({
     onSuccess: () => {
-      utils.idea.list.invalidate()
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
       setIsDialogOpen(false)
       setEditingIdea(null)
       toast.success('Idea updated successfully')
@@ -63,7 +71,7 @@ export default function IdeasPage() {
 
   const deleteMutation = api.idea.delete.useMutation({
     onSuccess: () => {
-      utils.idea.list.invalidate()
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
       toast.success('Idea deleted successfully')
     },
     onError: (error) => {
@@ -100,7 +108,10 @@ export default function IdeasPage() {
         categoryId: data.categoryId || null,
       })
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate({
+        ...data,
+        impactMatrixId: matrixId,
+      })
     }
   }
 
@@ -130,11 +141,16 @@ export default function IdeasPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Button variant="ghost" className="mb-4" onClick={() => router.push(`/matrix/${matrixId}`)}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Matrix
+      </Button>
+
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Ideas</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your improvement ideas and track their progress
+            {matrix?.name || 'Manage ideas in this matrix'}
           </p>
         </div>
         <Button onClick={handleCreateNew}>
@@ -151,14 +167,14 @@ export default function IdeasPage() {
         </div>
 
         <Select
-          value={filterCategory || ''}
-          onValueChange={(value) => setFilterCategory(value === '' ? undefined : value)}
+          value={filterCategory || 'all'}
+          onValueChange={(value) => setFilterCategory(value === 'all' ? undefined : value)}
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All categories</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {categories?.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 <div className="flex items-center gap-2">
@@ -174,16 +190,16 @@ export default function IdeasPage() {
         </Select>
 
         <Select
-          value={filterStatus || ''}
+          value={filterStatus || 'all'}
           onValueChange={(value) =>
-            setFilterStatus(value === '' ? undefined : (value as IdeaStatus))
+            setFilterStatus(value === 'all' ? undefined : (value as IdeaStatus))
           }
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All statuses</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
             {Object.entries(STATUS_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}

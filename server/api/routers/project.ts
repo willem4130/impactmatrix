@@ -1,91 +1,103 @@
 import { z } from 'zod'
 import { createTRPCRouter, publicProcedure } from '../trpc'
 
-export const categoryRouter = createTRPCRouter({
-  // List all categories with idea counts (optionally filtered by impactMatrixId)
+export const projectRouter = createTRPCRouter({
+  // List all projects (optionally filtered by organization)
   list: publicProcedure
     .input(
       z
         .object({
-          impactMatrixId: z.string().optional(),
+          organizationId: z.string().optional(),
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const categories = await ctx.prisma.category.findMany({
-        where: input?.impactMatrixId
-          ? { impactMatrixId: input.impactMatrixId }
+      const projects = await ctx.prisma.project.findMany({
+        where: input?.organizationId
+          ? { organizationId: input.organizationId }
           : undefined,
         include: {
+          organization: true,
           _count: {
-            select: { ideas: true },
+            select: { matrices: true },
           },
         },
         orderBy: {
-          name: 'asc',
+          createdAt: 'desc',
         },
       })
-      return categories
+      return projects
     }),
 
-  // Get single category with its ideas
+  // Get single project with its matrices
   get: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const category = await ctx.prisma.category.findUnique({
+      const project = await ctx.prisma.project.findUnique({
         where: { id: input.id },
         include: {
-          ideas: {
+          organization: true,
+          matrices: {
+            include: {
+              _count: {
+                select: { ideas: true, categories: true },
+              },
+            },
             orderBy: {
               createdAt: 'desc',
             },
           },
         },
       })
-      return category
+      return project
     }),
 
-  // Create new category
+  // Create new project
   create: publicProcedure
     .input(
       z.object({
         name: z.string().min(1, 'Name is required'),
         description: z.string().optional(),
-        color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color').default('#3b82f6'),
-        impactMatrixId: z.string(),
+        organizationId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const category = await ctx.prisma.category.create({
+      const project = await ctx.prisma.project.create({
         data: input,
+        include: {
+          organization: true,
+        },
       })
-      return category
+      return project
     }),
 
-  // Update existing category
+  // Update project
   update: publicProcedure
     .input(
       z.object({
         id: z.string(),
-        name: z.string().min(1, 'Name is required').optional(),
-        description: z.string().optional().nullable(),
-        color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color').optional(),
+        name: z.string().min(1, 'Name is required'),
+        description: z.string().optional(),
+        organizationId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
-      const category = await ctx.prisma.category.update({
+      const project = await ctx.prisma.project.update({
         where: { id },
         data,
+        include: {
+          organization: true,
+        },
       })
-      return category
+      return project
     }),
 
-  // Delete category
+  // Delete project
   delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.category.delete({
+      await ctx.prisma.project.delete({
         where: { id: input.id },
       })
       return { success: true }

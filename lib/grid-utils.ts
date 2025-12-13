@@ -1,8 +1,9 @@
 // Grid configuration
 export const GRID_SIZE = 10 // 10x10 grid
-export const CELL_SIZE = 80 // pixels
-export const GRID_WIDTH = GRID_SIZE * CELL_SIZE
-export const GRID_HEIGHT = GRID_SIZE * CELL_SIZE
+export const CELL_WIDTH = 120 // pixels
+export const CELL_HEIGHT = 65 // pixels
+export const GRID_WIDTH = GRID_SIZE * CELL_WIDTH
+export const GRID_HEIGHT = GRID_SIZE * CELL_HEIGHT
 
 // Quadrant definitions
 export type Quadrant = 'quick-wins' | 'major-projects' | 'fill-ins' | 'thankless-tasks'
@@ -52,8 +53,8 @@ export const QUADRANTS: Record<Quadrant, QuadrantInfo> = {
  * Y-axis: business value (1 = bottom, 10 = top)
  */
 export function gridToPosition(effort: number, businessValue: number): { x: number; y: number } {
-  const x = (effort - 1) * CELL_SIZE + CELL_SIZE / 2
-  const y = (GRID_SIZE - businessValue) * CELL_SIZE + CELL_SIZE / 2
+  const x = (effort - 1) * CELL_WIDTH + CELL_WIDTH / 2
+  const y = (GRID_SIZE - businessValue) * CELL_HEIGHT + CELL_HEIGHT / 2
   return { x, y }
 }
 
@@ -61,8 +62,8 @@ export function gridToPosition(effort: number, businessValue: number): { x: numb
  * Convert pixel position to effort and business value (1-10)
  */
 export function positionToGrid(x: number, y: number): { effort: number; businessValue: number } {
-  const effort = Math.max(1, Math.min(10, Math.round(x / CELL_SIZE) + 1))
-  const businessValue = Math.max(1, Math.min(10, GRID_SIZE - Math.round(y / CELL_SIZE)))
+  const effort = Math.max(1, Math.min(10, Math.round(x / CELL_WIDTH) + 1))
+  const businessValue = Math.max(1, Math.min(10, GRID_SIZE - Math.round(y / CELL_HEIGHT)))
   return { effort, businessValue }
 }
 

@@ -8,6 +8,7 @@ export const ideaRouter = createTRPCRouter({
     .input(
       z
         .object({
+          impactMatrixId: z.string().optional(),
           categoryId: z.string().optional(),
           status: z.nativeEnum(IdeaStatus).optional(),
         })
@@ -16,6 +17,7 @@ export const ideaRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const ideas = await ctx.prisma.idea.findMany({
         where: {
+          ...(input?.impactMatrixId && { impactMatrixId: input.impactMatrixId }),
           ...(input?.categoryId && { categoryId: input.categoryId }),
           ...(input?.status && { status: input.status }),
         },
@@ -50,6 +52,7 @@ export const ideaRouter = createTRPCRouter({
         description: z.string().optional(),
         effort: z.number().int().min(1).max(10).default(5),
         businessValue: z.number().int().min(1).max(10).default(5),
+        impactMatrixId: z.string(),
         categoryId: z.string().optional(),
         status: z.nativeEnum(IdeaStatus).default(IdeaStatus.DRAFT),
       })

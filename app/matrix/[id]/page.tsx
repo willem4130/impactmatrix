@@ -1,31 +1,47 @@
 'use client'
 
+import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/trpc/react'
 import { MatrixGrid } from '@/components/matrix/matrix-grid'
+import { IdeasSidePanel } from '@/components/matrix/ideas-side-panel'
 import { Button } from '@/components/ui/button'
-import { Plus, RefreshCw } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Plus, RefreshCw, ArrowLeft, List, Tag, PanelRight } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 export default function MatrixPage() {
+  const params = useParams()
   const router = useRouter()
+  const matrixId = params.id as string
+  const [showSidePanel, setShowSidePanel] = useState(false)
+
   const utils = api.useUtils()
-  const { data: ideas, isLoading, error, refetch } = api.idea.list.useQuery()
+
+  const { data: matrix, isLoading: matrixLoading, error: matrixError } = api.impactMatrix.get.useQuery({ id: matrixId })
+  const { data: ideas, isLoading: ideasLoading, error: ideasError, refetch } = api.idea.list.useQuery({ impactMatrixId: matrixId })
 
   const updatePositionMutation = api.idea.updatePosition.useMutation({
     onSuccess: () => {
-      utils.idea.list.invalidate()
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
       toast.success('Idea position updated')
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to update idea position')
-      utils.idea.list.invalidate() // Revert to server state
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
     },
   })
 
-  const handleCreateIdea = () => {
-    router.push('/ideas')
-  }
+  const updateIdeaMutation = api.idea.update.useMutation({
+    onSuccess: () => {
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+      toast.success('Idea updated')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update idea')
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+    },
+  })
 
   const handleRefresh = () => {
     refetch()
@@ -39,11 +55,22 @@ export default function MatrixPage() {
     })
   }
 
+  const handleIdeaUpdate = (ideaId: string, newEffort: number, newBusinessValue: number) => {
+    updateIdeaMutation.mutate({
+      id: ideaId,
+      effort: newEffort,
+      businessValue: newBusinessValue,
+    })
+  }
+
+  const isLoading = matrixLoading || ideasLoading
+  const error = matrixError || ideasError
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
-          <p className="text-destructive">Error loading ideas: {error.message}</p>
+          <p className="text-destructive">Error loading matrix: {error.message}</p>
           <Button onClick={handleRefresh} className="mt-4">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
@@ -53,37 +80,77 @@ export default function MatrixPage() {
     )
   }
 
+  if (matrixLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-md border p-8 text-center">
+          <p className="text-muted-foreground">Loading matrix...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!matrix) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
+          <p className="text-destructive">Matrix not found</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
+      <Button variant="ghost" className="mb-4" onClick={() => router.push(`/projects/${matrix.projectId}`)}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to {matrix.project.name}
+      </Button>
+
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Impact Matrix</h1>
-          <p className="text-muted-foreground mt-1">
-            Visualize and prioritize your ideas based on effort vs. business value
+          <h1 className="text-3xl font-bold">{matrix.name}</h1>
+          {matrix.description && (
+            <p className="text-muted-foreground mt-1">{matrix.description}</p>
+          )}
+          <p className="text-sm text-muted-foreground mt-1">
+            {matrix.project.name} → {matrix.project.organization.name}
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowSidePanel(!showSidePanel)}>
+            <PanelRight className="mr-2 h-4 w-4" />
+            {showSidePanel ? 'Hide' : 'Show'} Ideas Panel
+          </Button>
+          <Link href={`/matrix/${matrixId}/categories`}>
+            <Button variant="outline">
+              <Tag className="mr-2 h-4 w-4" />
+              Categories
+            </Button>
+          </Link>
+          <Link href={`/matrix/${matrixId}/ideas`}>
+            <Button variant="outline">
+              <List className="mr-2 h-4 w-4" />
+              Ideas List
+            </Button>
+          </Link>
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={handleCreateIdea}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Idea
-          </Button>
         </div>
       </div>
 
-      {isLoading ? (
+      {ideasLoading ? (
         <div className="flex items-center justify-center" style={{ height: 800 }}>
           <div className="text-center">
             <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Loading matrix...</p>
+            <p className="text-muted-foreground">Loading ideas...</p>
           </div>
         </div>
       ) : ideas && ideas.length > 0 ? (
         <div className="flex flex-col items-center">
-          <MatrixGrid ideas={ideas} onIdeaMove={handleIdeaMove} />
+          <MatrixGrid ideas={ideas} onIdeaMove={handleIdeaMove} onIdeaUpdate={handleIdeaUpdate} />
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
               Showing {ideas.length} {ideas.length === 1 ? 'idea' : 'ideas'}
@@ -96,10 +163,12 @@ export default function MatrixPage() {
           <p className="text-sm text-muted-foreground mb-6">
             Create your first idea to see it on the matrix
           </p>
-          <Button onClick={handleCreateIdea}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create your first idea
-          </Button>
+          <Link href={`/matrix/${matrixId}/ideas`}>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create your first idea
+            </Button>
+          </Link>
         </div>
       )}
 
@@ -135,6 +204,11 @@ export default function MatrixPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Ideas Side Panel */}
+      {showSidePanel && ideas && (
+        <IdeasSidePanel ideas={ideas} matrixId={matrixId} onClose={() => setShowSidePanel(false)} />
       )}
     </div>
   )

@@ -201,16 +201,16 @@ export function IdeaFormDialog({
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category (optional)</Label>
               <Select
-                value={selectedCategoryId || ''}
+                value={selectedCategoryId || 'none'}
                 onValueChange={(value) =>
-                  setValue('categoryId', value === '' ? undefined : value)
+                  setValue('categoryId', value === 'none' ? undefined : value)
                 }
               >
                 <SelectTrigger id="categoryId">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {categories?.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">

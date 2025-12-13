@@ -2,24 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Grid3x3, Lightbulb, FolderKanban } from 'lucide-react'
+import { Grid3x3, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const links = [
   {
-    href: '/matrix',
-    label: 'Matrix',
-    icon: Grid3x3,
-  },
-  {
-    href: '/ideas',
-    label: 'Ideas',
-    icon: Lightbulb,
-  },
-  {
-    href: '/categories',
-    label: 'Categories',
-    icon: FolderKanban,
+    href: '/organizations',
+    label: 'Organizations',
+    icon: Building2,
   },
 ]
 
@@ -30,15 +20,15 @@ export function Navigation() {
     <nav className="border-b bg-card">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center gap-8">
-          <div className="flex items-center gap-2">
+          <Link href="/organizations" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Grid3x3 className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">Impact Matrix</span>
-          </div>
+          </Link>
 
           <div className="flex gap-1">
             {links.map((link) => {
               const Icon = link.icon
-              const isActive = pathname === link.href
+              const isActive = pathname.startsWith(link.href)
 
               return (
                 <Link

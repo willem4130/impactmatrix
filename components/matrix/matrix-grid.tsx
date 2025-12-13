@@ -14,7 +14,8 @@ import {
 import { IdeaCard } from './idea-card'
 import {
   GRID_SIZE,
-  CELL_SIZE,
+  CELL_WIDTH,
+  CELL_HEIGHT,
   GRID_WIDTH,
   GRID_HEIGHT,
   QUADRANTS,
@@ -29,14 +30,17 @@ type IdeaWithCategory = Idea & {
 interface MatrixGridProps {
   ideas: IdeaWithCategory[]
   onIdeaMove?: (ideaId: string, newEffort: number, newBusinessValue: number) => void
+  onIdeaUpdate?: (ideaId: string, newEffort: number, newBusinessValue: number) => void
 }
 
-export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
+export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate }: MatrixGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5, // Reduced for smoother dragging
+        delay: 0,
+        tolerance: 5,
       },
     })
   )
@@ -155,11 +159,11 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
             pointerEvents: 'none',
           }}
         >
-          <div className="text-center">
-            <div className="text-sm font-semibold text-green-700">
+          <div className="text-center px-4">
+            <div className="text-base font-bold text-green-700">
               {QUADRANTS['quick-wins'].label}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground mt-1">
               {QUADRANTS['quick-wins'].description}
             </div>
           </div>
@@ -174,11 +178,11 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
             pointerEvents: 'none',
           }}
         >
-          <div className="text-center">
-            <div className="text-sm font-semibold text-blue-700">
+          <div className="text-center px-4">
+            <div className="text-base font-bold text-blue-700">
               {QUADRANTS['major-projects'].label}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground mt-1">
               {QUADRANTS['major-projects'].description}
             </div>
           </div>
@@ -193,11 +197,11 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
             pointerEvents: 'none',
           }}
         >
-          <div className="text-center">
-            <div className="text-sm font-semibold text-yellow-700">
+          <div className="text-center px-4">
+            <div className="text-base font-bold text-yellow-700">
               {QUADRANTS['fill-ins'].label}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground mt-1">
               {QUADRANTS['fill-ins'].description}
             </div>
           </div>
@@ -212,11 +216,11 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
             pointerEvents: 'none',
           }}
         >
-          <div className="text-center">
-            <div className="text-sm font-semibold text-red-700">
+          <div className="text-center px-4">
+            <div className="text-base font-bold text-red-700">
               {QUADRANTS['thankless-tasks'].label}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground mt-1">
               {QUADRANTS['thankless-tasks'].description}
             </div>
           </div>
@@ -229,7 +233,7 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
             <div
               className="absolute bg-border"
               style={{
-                left: i * CELL_SIZE,
+                left: i * CELL_WIDTH,
                 top: 0,
                 width: i === 0 || i === GRID_SIZE || i === GRID_SIZE / 2 ? 2 : 1,
                 height: GRID_HEIGHT,
@@ -241,7 +245,7 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
               className="absolute bg-border"
               style={{
                 left: 0,
-                top: i * CELL_SIZE,
+                top: i * CELL_HEIGHT,
                 width: GRID_WIDTH,
                 height: i === 0 || i === GRID_SIZE || i === GRID_SIZE / 2 ? 2 : 1,
                 opacity: i === 0 || i === GRID_SIZE || i === GRID_SIZE / 2 ? 0.3 : 0.1,
@@ -261,6 +265,7 @@ export function MatrixGrid({ ideas, onIdeaMove }: MatrixGridProps) {
                 left: position.x,
                 top: position.y,
               }}
+              onUpdate={onIdeaUpdate}
             />
           )
         })}

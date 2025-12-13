@@ -76,10 +76,17 @@ If changes require server restart (not hot-reloadable):
 
 ## Database Schema
 
+**Organization → Project → ImpactMatrix → Ideas/Categories**
+
+Full hierarchical structure with cascade deletes:
+- Organization contains Projects
+- Project contains ImpactMatrices
+- ImpactMatrix contains Ideas and Categories
+
 **Idea Model:**
 - id, title, description
 - effort (1-10), businessValue (1-10)
-- positionX, positionY (grid coordinates)
+- impactMatrixId (required - scoped to matrix)
 - categoryId (optional relation)
 - status (draft, in-progress, completed)
 - timestamps
@@ -87,5 +94,35 @@ If changes require server restart (not hot-reloadable):
 **Category Model:**
 - id, name, description
 - color (hex for visual differentiation)
+- impactMatrixId (required - scoped to matrix)
 - ideas (relation)
 - timestamps
+
+## Matrix Features
+
+**Interactive Grid (1200x650px):**
+- Wider aspect ratio to fit viewport without scrolling
+- 10x10 grid with rectangular cells (120px wide x 65px tall)
+- Drag & drop ideas to change effort/business value scores
+- Smooth dragging with reduced activation distance (5px)
+- Four quadrants: Quick Wins, Major Projects, Fill-Ins, Thankless Tasks
+
+**Inline Editing:**
+- Click on effort (E:) or business value (V:) badges to edit
+- Press Enter to save, Escape to cancel
+- Real-time updates with optimistic UI
+- Dragging disabled while editing
+
+**Ideas Side Panel:**
+- Toggle on/off with "Show/Hide Ideas Panel" button
+- Lists all ideas sorted by priority (business value desc, then effort asc)
+- Shows quadrant classification for each idea
+- Color-coded by category
+- Links to full ideas list view
+- Fixed 320px width, full height scrollable
+
+**Key Files:**
+- `/lib/grid-utils.ts` - Grid configuration (CELL_WIDTH, CELL_HEIGHT)
+- `/components/matrix/idea-card.tsx` - Inline editing for scores
+- `/components/matrix/ideas-side-panel.tsx` - Side panel component
+- `/app/matrix/[id]/page.tsx` - Matrix page with side panel toggle
