@@ -79,3 +79,49 @@ export function getQuadrant(effort: number, businessValue: number): Quadrant {
   if (!isHighValue && !isHighEffort) return 'fill-ins'
   return 'thankless-tasks'
 }
+
+/**
+ * Check if an idea has position drift (manually positioned away from grid-calculated position)
+ * Returns true if the idea has a custom position that differs from the calculated grid position
+ */
+export function hasPositionDrift(
+  positionX: number | null,
+  positionY: number | null,
+  effort: number,
+  businessValue: number,
+  tolerance: number = 10
+): boolean {
+  // If no custom position is set, there's no drift
+  if (positionX === null || positionY === null) {
+    return false
+  }
+
+  // Calculate the expected grid position
+  const calculatedPosition = gridToPosition(effort, businessValue)
+
+  // Check if the actual position differs from calculated position by more than tolerance
+  const xDiff = Math.abs(positionX - calculatedPosition.x)
+  const yDiff = Math.abs(positionY - calculatedPosition.y)
+
+  return xDiff > tolerance || yDiff > tolerance
+}
+
+/**
+ * Calculate the distance (in pixels) between current position and grid-calculated position
+ */
+export function getPositionDriftDistance(
+  positionX: number | null,
+  positionY: number | null,
+  effort: number,
+  businessValue: number
+): number {
+  if (positionX === null || positionY === null) {
+    return 0
+  }
+
+  const calculatedPosition = gridToPosition(effort, businessValue)
+  const xDiff = positionX - calculatedPosition.x
+  const yDiff = positionY - calculatedPosition.y
+
+  return Math.sqrt(xDiff * xDiff + yDiff * yDiff)
+}

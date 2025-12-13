@@ -6,7 +6,8 @@ import { useDraggable } from '@dnd-kit/core'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Move } from 'lucide-react'
+import { hasPositionDrift } from '@/lib/grid-utils'
 
 type IdeaWithCategory = Idea & {
   category: Category | null
@@ -94,6 +95,9 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
     : ''
   const combinedTransform = baseTransform + scaleTransform + dragTransform
 
+  // Check if this idea has position drift
+  const hasDrift = hasPositionDrift(idea.positionX, idea.positionY, idea.effort, idea.businessValue)
+
   return (
     <div
       ref={setNodeRef}
@@ -110,7 +114,18 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
       }}
     >
       <div className="flex items-start justify-between gap-1.5">
-        <h3 className="text-sm font-semibold line-clamp-2 flex-1 leading-tight">{idea.title}</h3>
+        <div className="flex items-start gap-1.5 flex-1 min-w-0">
+          <h3 className="text-sm font-semibold line-clamp-2 flex-1 leading-tight">{idea.title}</h3>
+          {hasDrift && (
+            <Badge
+              variant="secondary"
+              className="h-5 px-1.5 flex-shrink-0 bg-amber-500/10 text-amber-700 border-amber-500/30"
+              title="Manually positioned (differs from grid position)"
+            >
+              <Move className="h-3 w-3" />
+            </Badge>
+          )}
+        </div>
         {idea.category && (
           <div
             className="h-3.5 w-3.5 rounded-full flex-shrink-0 ring-1 ring-white/20"
