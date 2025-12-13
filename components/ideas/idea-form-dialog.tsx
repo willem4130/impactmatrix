@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { api } from '@/trpc/react'
 
 const ideaFormSchema = z.object({
@@ -43,6 +45,7 @@ interface IdeaFormDialogProps {
   idea?: Idea | null
   onSubmit: (data: IdeaFormData) => void
   isLoading?: boolean
+  impactMatrixId: string
 }
 
 const STATUS_LABELS: Record<IdeaStatus, string> = {
@@ -52,14 +55,39 @@ const STATUS_LABELS: Record<IdeaStatus, string> = {
   ARCHIVED: 'Archived',
 }
 
+const DEFAULT_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',
+]
+
 export function IdeaFormDialog({
   open,
   onOpenChange,
   idea,
   onSubmit,
   isLoading,
+  impactMatrixId,
 }: IdeaFormDialogProps) {
-  const { data: categories } = api.category.list.useQuery()
+  const [showCategoryForm, setShowCategoryForm] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryColor, setNewCategoryColor] = useState(DEFAULT_COLORS[0])
+
+  const utils = api.useUtils()
+  const { data: categories } = api.category.list.useQuery({ impactMatrixId })
+
+  const createCategoryMutation = api.category.create.useMutation({
+    onSuccess: (newCategory) => {
+      utils.category.list.invalidate({ impactMatrixId })
+      setValue('categoryId', newCategory.id)
+      setShowCategoryForm(false)
+      setNewCategoryName('')
+      setNewCategoryColor(DEFAULT_COLORS[0])
+      toast.success('Category created')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create category')
+    },
+  })
 
   const {
     register,
@@ -200,30 +228,96 @@ export function IdeaFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category (optional)</Label>
-              <Select
-                value={selectedCategoryId || 'none'}
-                onValueChange={(value) =>
-                  setValue('categoryId', value === 'none' ? undefined : value)
-                }
-              >
-                <SelectTrigger id="categoryId">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {!showCategoryForm ? (
+                <>
+                  <Select
+                    value={selectedCategoryId || 'none'}
+                    onValueChange={(value) =>
+                      setValue('categoryId', value === 'none' ? undefined : value)
+                    }
+                  >
+                    <SelectTrigger id="categoryId">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {categories?.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="h-3 w-3 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                            />
+                            {category.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => setShowCategoryForm(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create New Category
+                  </Button>
+                </>
+              ) : (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+                  <Input
+                    placeholder="Category name"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    {DEFAULT_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className="h-8 w-8 rounded-md border-2 transition-all hover:scale-110"
+                        style={{
+                          backgroundColor: color,
+                          borderColor: newCategoryColor === color ? '#000' : 'transparent',
+                        }}
+                        onClick={() => setNewCategoryColor(color)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        if (newCategoryName.trim()) {
+                          createCategoryMutation.mutate({
+                            name: newCategoryName,
+                            color: newCategoryColor,
+                            impactMatrixId,
+                          })
+                        }
+                      }}
+                      disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                    >
+                      {createCategoryMutation.isPending ? 'Creating...' : 'Create'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowCategoryForm(false)
+                        setNewCategoryName('')
+                        setNewCategoryColor(DEFAULT_COLORS[0])
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
               {errors.categoryId && (
                 <p className="text-sm text-destructive">{errors.categoryId.message}</p>
               )}

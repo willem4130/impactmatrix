@@ -248,6 +248,7 @@ export default function MatrixIdeasPage() {
         idea={editingIdea}
         onSubmit={handleSubmit}
         isLoading={createMutation.isPending || updateMutation.isPending}
+        impactMatrixId={matrixId}
       />
     </div>
   )

@@ -121,8 +121,14 @@ Full hierarchical structure with cascade deletes:
 - Links to full ideas list view
 - Fixed 320px width, full height scrollable
 
+**Quick Actions:**
+- "New Idea" button on matrix page - create ideas without leaving the matrix view
+- Inline category creation in idea form - add categories on-the-fly while creating ideas
+- Ideas side panel - quick overview without navigation
+
 **Key Files:**
 - `/lib/grid-utils.ts` - Grid configuration (CELL_WIDTH, CELL_HEIGHT)
 - `/components/matrix/idea-card.tsx` - Inline editing for scores
 - `/components/matrix/ideas-side-panel.tsx` - Side panel component
-- `/app/matrix/[id]/page.tsx` - Matrix page with side panel toggle
+- `/components/ideas/idea-form-dialog.tsx` - Idea form with inline category creation
+- `/app/matrix/[id]/page.tsx` - Matrix page with side panel toggle and quick create

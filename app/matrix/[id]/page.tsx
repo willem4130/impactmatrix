@@ -5,16 +5,19 @@ import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/trpc/react'
 import { MatrixGrid } from '@/components/matrix/matrix-grid'
 import { IdeasSidePanel } from '@/components/matrix/ideas-side-panel'
+import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCw, ArrowLeft, List, Tag, PanelRight } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { Idea, IdeaStatus } from '@prisma/client'
 
 export default function MatrixPage() {
   const params = useParams()
   const router = useRouter()
   const matrixId = params.id as string
   const [showSidePanel, setShowSidePanel] = useState(false)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const utils = api.useUtils()
 
@@ -43,8 +46,33 @@ export default function MatrixPage() {
     },
   })
 
+  const createIdeaMutation = api.idea.create.useMutation({
+    onSuccess: () => {
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+      setIsCreateDialogOpen(false)
+      toast.success('Idea created')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create idea')
+    },
+  })
+
   const handleRefresh = () => {
     refetch()
+  }
+
+  const handleCreateIdea = (data: {
+    title: string
+    description?: string
+    effort: number
+    businessValue: number
+    categoryId?: string
+    status: IdeaStatus
+  }) => {
+    createIdeaMutation.mutate({
+      ...data,
+      impactMatrixId: matrixId,
+    })
   }
 
   const handleIdeaMove = (ideaId: string, newEffort: number, newBusinessValue: number) => {
@@ -118,6 +146,10 @@ export default function MatrixPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Idea
+          </Button>
           <Button variant="outline" onClick={() => setShowSidePanel(!showSidePanel)}>
             <PanelRight className="mr-2 h-4 w-4" />
             {showSidePanel ? 'Hide' : 'Show'} Ideas Panel
@@ -210,6 +242,15 @@ export default function MatrixPage() {
       {showSidePanel && ideas && (
         <IdeasSidePanel ideas={ideas} matrixId={matrixId} onClose={() => setShowSidePanel(false)} />
       )}
+
+      {/* Create Idea Dialog */}
+      <IdeaFormDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateIdea}
+        isLoading={createIdeaMutation.isPending}
+        impactMatrixId={matrixId}
+      />
     </div>
   )
 }
