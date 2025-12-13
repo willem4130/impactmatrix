@@ -7,7 +7,15 @@ import { MatrixGrid } from '@/components/matrix/matrix-grid'
 import { IdeasSidePanel } from '@/components/matrix/ideas-side-panel'
 import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
 import { Button } from '@/components/ui/button'
-import { Plus, RefreshCw, ArrowLeft, List, Tag, PanelRight, RotateCcw } from 'lucide-react'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import { Plus, RefreshCw, List, Tag, PanelRight, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { Idea, IdeaStatus } from '@prisma/client'
@@ -160,10 +168,30 @@ export default function MatrixPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" className="mb-4" onClick={() => router.push(`/projects/${matrix.projectId}`)}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to {matrix.project.name}
-      </Button>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/organizations/${matrix.project.organizationId}`}>
+                {matrix.project.organization.name}
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/projects/${matrix.projectId}`}>
+                {matrix.project.name}
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{matrix.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -171,9 +199,6 @@ export default function MatrixPage() {
           {matrix.description && (
             <p className="text-muted-foreground mt-1">{matrix.description}</p>
           )}
-          <p className="text-sm text-muted-foreground mt-1">
-            {matrix.project.name} → {matrix.project.organization.name}
-          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setIsCreateDialogOpen(true)}>
