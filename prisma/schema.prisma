@@ -43,17 +43,31 @@ model Project {
 }
 
 model ImpactMatrix {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  projectId   String
-  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  categories  Category[]
-  ideas       Idea[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String          @id @default(cuid())
+  name          String
+  description   String?
+  projectId     String
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  categories    Category[]
+  ideas         Idea[]
+  filterPresets FilterPreset[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@index([projectId])
+  @@index([name])
+}
+
+model FilterPreset {
+  id             String       @id @default(cuid())
+  name           String
+  filters        Json         // FilterState serialized as JSON
+  impactMatrixId String
+  impactMatrix   ImpactMatrix @relation(fields: [impactMatrixId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([impactMatrixId])
   @@index([name])
 }
 

@@ -4,6 +4,7 @@ import { projectRouter } from './routers/project'
 import { impactMatrixRouter } from './routers/impactMatrix'
 import { ideaRouter } from './routers/idea'
 import { categoryRouter } from './routers/category'
+import { filterPresetRouter } from './routers/filterPreset'
 
 export const appRouter = createTRPCRouter({
   organization: organizationRouter,
@@ -11,6 +12,7 @@ export const appRouter = createTRPCRouter({
   impactMatrix: impactMatrixRouter,
   idea: ideaRouter,
   category: categoryRouter,
+  filterPreset: filterPresetRouter,
 })
 
 export type AppRouter = typeof appRouter

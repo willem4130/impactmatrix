@@ -276,6 +276,7 @@ export default function MatrixPage() {
           <MatrixFilters
             ideas={ideas}
             categories={categories || []}
+            impactMatrixId={matrixId}
             onFilterChange={setFilteredIdeas}
           />
 
