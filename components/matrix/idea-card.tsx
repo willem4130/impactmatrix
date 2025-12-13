@@ -24,7 +24,7 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
   const [editingField, setEditingField] = useState<'effort' | 'businessValue' | 'weight' | null>(null)
   const [effortValue, setEffortValue] = useState(idea.effort.toString())
   const [businessValueValue, setBusinessValueValue] = useState(idea.businessValue.toString())
-  const [weightValue, setWeightValue] = useState(idea.weight.toString())
+  const [weightValue, setWeightValue] = useState((idea.weight ?? 5).toString())
   const effortInputRef = useRef<HTMLInputElement>(null)
   const businessValueInputRef = useRef<HTMLInputElement>(null)
   const weightInputRef = useRef<HTMLInputElement>(null)
@@ -52,13 +52,13 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
   useEffect(() => {
     setEffortValue(idea.effort.toString())
     setBusinessValueValue(idea.businessValue.toString())
-    setWeightValue(idea.weight.toString())
+    setWeightValue((idea.weight ?? 5).toString())
   }, [idea.effort, idea.businessValue, idea.weight])
 
   const handleSaveEffort = () => {
     const newEffort = parseInt(effortValue)
     if (!isNaN(newEffort) && newEffort >= 1 && newEffort <= 10 && newEffort !== idea.effort) {
-      onUpdate?.(idea.id, newEffort, idea.businessValue, idea.weight)
+      onUpdate?.(idea.id, newEffort, idea.businessValue, idea.weight ?? 5)
     } else {
       setEffortValue(idea.effort.toString())
     }
@@ -68,7 +68,7 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
   const handleSaveBusinessValue = () => {
     const newBusinessValue = parseInt(businessValueValue)
     if (!isNaN(newBusinessValue) && newBusinessValue >= 1 && newBusinessValue <= 10 && newBusinessValue !== idea.businessValue) {
-      onUpdate?.(idea.id, idea.effort, newBusinessValue, idea.weight)
+      onUpdate?.(idea.id, idea.effort, newBusinessValue, idea.weight ?? 5)
     } else {
       setBusinessValueValue(idea.businessValue.toString())
     }
@@ -77,10 +77,11 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
 
   const handleSaveWeight = () => {
     const newWeight = parseInt(weightValue)
-    if (!isNaN(newWeight) && newWeight >= 1 && newWeight <= 10 && newWeight !== idea.weight) {
+    const currentWeight = idea.weight ?? 5
+    if (!isNaN(newWeight) && newWeight >= 1 && newWeight <= 10 && newWeight !== currentWeight) {
       onUpdate?.(idea.id, idea.effort, idea.businessValue, newWeight)
     } else {
-      setWeightValue(idea.weight.toString())
+      setWeightValue(currentWeight.toString())
     }
     setEditingField(null)
   }
@@ -202,7 +203,7 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
                 if (e.key === 'Enter') {
                   handleSaveWeight()
                 } else if (e.key === 'Escape') {
-                  setWeightValue(idea.weight.toString())
+                  setWeightValue((idea.weight ?? 5).toString())
                   setEditingField(null)
                 }
               }}
@@ -219,7 +220,7 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
               }}
               title="Click to edit weight/importance (1-10)"
             >
-              W:{idea.weight}
+              W:{idea.weight ?? 5}
             </Badge>
           )}
         </div>
