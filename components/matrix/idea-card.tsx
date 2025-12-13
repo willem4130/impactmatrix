@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { RotateCcw, Move } from 'lucide-react'
-import { hasPositionDrift } from '@/lib/grid-utils'
+import { hasPositionDrift, getPositionDriftDelta, formatDriftDelta } from '@/lib/grid-utils'
 
 type IdeaWithCategory = Idea & {
   category: Category | null
@@ -97,6 +97,8 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
 
   // Check if this idea has position drift
   const hasDrift = hasPositionDrift(idea.positionX, idea.positionY, idea.effort, idea.businessValue)
+  const { effortDelta, valueDelta } = getPositionDriftDelta(idea.positionX, idea.positionY, idea.effort, idea.businessValue)
+  const driftLabel = formatDriftDelta(effortDelta, valueDelta)
 
   return (
     <div
@@ -120,9 +122,12 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
             <Badge
               variant="secondary"
               className="h-5 px-1.5 flex-shrink-0 bg-amber-500/10 text-amber-700 border-amber-500/30"
-              title="Manually positioned (differs from grid position)"
+              title={`Actual scores: E:${idea.effort} V:${idea.businessValue}\nPositioned at: E:${idea.effort + effortDelta} V:${idea.businessValue + valueDelta}`}
             >
               <Move className="h-3 w-3" />
+              <span className="ml-1 text-xs font-medium whitespace-nowrap">
+                E:{idea.effort + effortDelta} V:{idea.businessValue + valueDelta}
+              </span>
             </Badge>
           )}
         </div>
@@ -239,18 +244,18 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onReset
             </Badge>
           )}
         </div>
-        {onResetPosition && (idea.positionX !== null || idea.positionY !== null) && (
+        {onResetPosition && hasDrift && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-6 w-6 hover:bg-amber-500/20"
             onClick={(e) => {
               e.stopPropagation()
               onResetPosition(idea.id)
             }}
             title="Reset to grid position"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-3 w-3 text-amber-700" />
           </Button>
         )}
       </div>

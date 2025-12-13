@@ -117,6 +117,29 @@ export const ideaRouter = createTRPCRouter({
       return idea
     }),
 
+  // Update custom position (for free positioning on matrix)
+  updateCustomPosition: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        positionX: z.number(),
+        positionY: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const idea = await ctx.prisma.idea.update({
+        where: { id: input.id },
+        data: {
+          positionX: input.positionX,
+          positionY: input.positionY,
+        },
+        include: {
+          category: true,
+        },
+      })
+      return idea
+    }),
+
   // Reset idea position (clear manual positioning, use calculated position)
   resetPosition: publicProcedure
     .input(z.object({ id: z.string() }))

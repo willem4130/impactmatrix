@@ -5,7 +5,7 @@ import { Idea, Category, IdeaStatus } from '@prisma/client'
 import { X, ExternalLink, Pencil, Trash2, Plus, Move } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { hasPositionDrift } from '@/lib/grid-utils'
+import { hasPositionDrift, getPositionDriftDelta } from '@/lib/grid-utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -223,15 +223,21 @@ export function IdeasSidePanel({ ideas, matrixId, onClose }: IdeasSidePanelProps
                     <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                       W:{idea.weight ?? 5}
                     </Badge>
-                    {hasPositionDrift(idea.positionX, idea.positionY, idea.effort, idea.businessValue) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs px-1.5 py-0.5 bg-amber-500/10 text-amber-700 border-amber-500/30"
-                        title="Manually positioned"
-                      >
-                        <Move className="h-3 w-3" />
-                      </Badge>
-                    )}
+                    {hasPositionDrift(idea.positionX, idea.positionY, idea.effort, idea.businessValue) && (() => {
+                      const { effortDelta, valueDelta } = getPositionDriftDelta(idea.positionX, idea.positionY, idea.effort, idea.businessValue)
+                      return (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs px-1.5 py-0.5 bg-amber-500/10 text-amber-700 border-amber-500/30"
+                          title={`Actual: E:${idea.effort} V:${idea.businessValue}\nPositioned: E:${idea.effort + effortDelta} V:${idea.businessValue + valueDelta}`}
+                        >
+                          <Move className="h-3 w-3" />
+                          <span className="ml-1 whitespace-nowrap">
+                            E:{idea.effort + effortDelta} V:{idea.businessValue + valueDelta}
+                          </span>
+                        </Badge>
+                      )
+                    })()}
                   </div>
                   <Badge variant="secondary" className="text-xs px-1.5 py-0.5 whitespace-nowrap">
                     {getQuadrantLabel(idea.effort, idea.businessValue)}

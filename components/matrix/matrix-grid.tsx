@@ -30,11 +30,12 @@ type IdeaWithCategory = Idea & {
 interface MatrixGridProps {
   ideas: IdeaWithCategory[]
   onIdeaMove?: (ideaId: string, newEffort: number, newBusinessValue: number) => void
+  onCustomPosition?: (ideaId: string, positionX: number, positionY: number) => void
   onIdeaUpdate?: (ideaId: string, newEffort: number, newBusinessValue: number, newWeight: number) => void
   onResetPosition?: (ideaId: string) => void
 }
 
-export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate, onResetPosition }: MatrixGridProps) {
+export function MatrixGrid({ ideas, onIdeaMove, onCustomPosition, onIdeaUpdate, onResetPosition }: MatrixGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -54,20 +55,19 @@ export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate, onResetPosition }:
     const { active, delta } = event
     const idea = ideas.find((i) => i.id === active.id)
 
-    if (idea && delta.x !== 0 && delta.y !== 0) {
-      const currentPosition = gridToPosition(idea.effort, idea.businessValue)
+    if (idea && (delta.x !== 0 || delta.y !== 0)) {
+      // Get the current position (custom or calculated)
+      const currentPosition = idea.positionX !== null && idea.positionY !== null
+        ? { x: idea.positionX, y: idea.positionY }
+        : gridToPosition(idea.effort, idea.businessValue)
+
       const newPosition = {
-        x: currentPosition.x + delta.x,
-        y: currentPosition.y + delta.y,
+        x: Math.max(0, Math.min(GRID_WIDTH, currentPosition.x + delta.x)),
+        y: Math.max(0, Math.min(GRID_HEIGHT, currentPosition.y + delta.y)),
       }
 
-      // Convert new pixel position back to grid coordinates
-      const { effort, businessValue } = positionToGrid(newPosition.x, newPosition.y)
-
-      // Only update if the position changed
-      if (effort !== idea.effort || businessValue !== idea.businessValue) {
-        onIdeaMove?.(idea.id, effort, businessValue)
-      }
+      // Save the custom position
+      onCustomPosition?.(idea.id, newPosition.x, newPosition.y)
     }
 
     setActiveId(null)
@@ -257,7 +257,11 @@ export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate, onResetPosition }:
 
         {/* Ideas */}
         {ideas.map((idea) => {
-          const position = gridToPosition(idea.effort, idea.businessValue)
+          // Use custom position if set, otherwise calculate from grid
+          const position = idea.positionX !== null && idea.positionY !== null
+            ? { x: idea.positionX, y: idea.positionY }
+            : gridToPosition(idea.effort, idea.businessValue)
+
           return (
             <IdeaCard
               key={idea.id}

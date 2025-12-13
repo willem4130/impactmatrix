@@ -125,3 +125,46 @@ export function getPositionDriftDistance(
 
   return Math.sqrt(xDiff * xDiff + yDiff * yDiff)
 }
+
+/**
+ * Get the drift in terms of effort and business value differences
+ * Returns how many grid units the position differs from the calculated position
+ */
+export function getPositionDriftDelta(
+  positionX: number | null,
+  positionY: number | null,
+  effort: number,
+  businessValue: number
+): { effortDelta: number; valueDelta: number } {
+  if (positionX === null || positionY === null) {
+    return { effortDelta: 0, valueDelta: 0 }
+  }
+
+  // Calculate what the grid position would be based on current pixel position
+  const currentGridPosition = positionToGrid(positionX, positionY)
+
+  // Calculate the difference from the actual effort/businessValue scores
+  const effortDelta = currentGridPosition.effort - effort
+  const valueDelta = currentGridPosition.businessValue - businessValue
+
+  return { effortDelta, valueDelta }
+}
+
+/**
+ * Format the drift delta for display
+ */
+export function formatDriftDelta(effortDelta: number, valueDelta: number): string {
+  const parts: string[] = []
+
+  if (effortDelta !== 0) {
+    const sign = effortDelta > 0 ? '+' : ''
+    parts.push(`E${sign}${effortDelta}`)
+  }
+
+  if (valueDelta !== 0) {
+    const sign = valueDelta > 0 ? '+' : ''
+    parts.push(`V${sign}${valueDelta}`)
+  }
+
+  return parts.length > 0 ? parts.join(' ') : 'No drift'
+}

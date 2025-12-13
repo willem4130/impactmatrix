@@ -43,6 +43,16 @@ export default function MatrixPage() {
     },
   })
 
+  const updateCustomPositionMutation = api.idea.updateCustomPosition.useMutation({
+    onSuccess: () => {
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update position')
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+    },
+  })
+
   const updateIdeaMutation = api.idea.update.useMutation({
     onSuccess: () => {
       utils.idea.list.invalidate({ impactMatrixId: matrixId })
@@ -109,6 +119,14 @@ export default function MatrixPage() {
       id: ideaId,
       effort: newEffort,
       businessValue: newBusinessValue,
+    })
+  }
+
+  const handleCustomPosition = (ideaId: string, positionX: number, positionY: number) => {
+    updateCustomPositionMutation.mutate({
+      id: ideaId,
+      positionX,
+      positionY,
     })
   }
 
@@ -209,16 +227,16 @@ export default function MatrixPage() {
             <PanelRight className="mr-2 h-4 w-4" />
             {showSidePanel ? 'Hide' : 'Show'} Ideas Panel
           </Button>
-          <Link href={`/matrix/${matrixId}/categories`}>
-            <Button variant="outline">
-              <Tag className="mr-2 h-4 w-4" />
-              Categories
-            </Button>
-          </Link>
           <Link href={`/matrix/${matrixId}/ideas`}>
             <Button variant="outline">
               <List className="mr-2 h-4 w-4" />
               Ideas List
+            </Button>
+          </Link>
+          <Link href={`/matrix/${matrixId}/categories`}>
+            <Button variant="outline">
+              <Tag className="mr-2 h-4 w-4" />
+              Categories
             </Button>
           </Link>
           <Button
@@ -249,6 +267,7 @@ export default function MatrixPage() {
           <MatrixGrid
             ideas={ideas}
             onIdeaMove={handleIdeaMove}
+            onCustomPosition={handleCustomPosition}
             onIdeaUpdate={handleIdeaUpdate}
             onResetPosition={handleResetPosition}
           />
