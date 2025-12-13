@@ -5,6 +5,8 @@ import { Idea, Category } from '@prisma/client'
 import { useDraggable } from '@dnd-kit/core'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { RotateCcw } from 'lucide-react'
 
 type IdeaWithCategory = Idea & {
   category: Category | null
@@ -14,15 +16,18 @@ interface IdeaCardProps {
   idea: IdeaWithCategory
   style?: React.CSSProperties
   isDragOverlay?: boolean
-  onUpdate?: (id: string, effort: number, businessValue: number) => void
+  onUpdate?: (id: string, effort: number, businessValue: number, weight: number) => void
+  onResetPosition?: (id: string) => void
 }
 
-export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate }: IdeaCardProps) {
-  const [editingField, setEditingField] = useState<'effort' | 'businessValue' | null>(null)
+export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate, onResetPosition }: IdeaCardProps) {
+  const [editingField, setEditingField] = useState<'effort' | 'businessValue' | 'weight' | null>(null)
   const [effortValue, setEffortValue] = useState(idea.effort.toString())
   const [businessValueValue, setBusinessValueValue] = useState(idea.businessValue.toString())
+  const [weightValue, setWeightValue] = useState(idea.weight.toString())
   const effortInputRef = useRef<HTMLInputElement>(null)
   const businessValueInputRef = useRef<HTMLInputElement>(null)
+  const weightInputRef = useRef<HTMLInputElement>(null)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: idea.id,
@@ -37,6 +42,9 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate }: IdeaC
     } else if (editingField === 'businessValue') {
       businessValueInputRef.current?.focus()
       businessValueInputRef.current?.select()
+    } else if (editingField === 'weight') {
+      weightInputRef.current?.focus()
+      weightInputRef.current?.select()
     }
   }, [editingField])
 
@@ -44,12 +52,13 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate }: IdeaC
   useEffect(() => {
     setEffortValue(idea.effort.toString())
     setBusinessValueValue(idea.businessValue.toString())
-  }, [idea.effort, idea.businessValue])
+    setWeightValue(idea.weight.toString())
+  }, [idea.effort, idea.businessValue, idea.weight])
 
   const handleSaveEffort = () => {
     const newEffort = parseInt(effortValue)
     if (!isNaN(newEffort) && newEffort >= 1 && newEffort <= 10 && newEffort !== idea.effort) {
-      onUpdate?.(idea.id, newEffort, idea.businessValue)
+      onUpdate?.(idea.id, newEffort, idea.businessValue, idea.weight)
     } else {
       setEffortValue(idea.effort.toString())
     }
@@ -59,9 +68,19 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate }: IdeaC
   const handleSaveBusinessValue = () => {
     const newBusinessValue = parseInt(businessValueValue)
     if (!isNaN(newBusinessValue) && newBusinessValue >= 1 && newBusinessValue <= 10 && newBusinessValue !== idea.businessValue) {
-      onUpdate?.(idea.id, idea.effort, newBusinessValue)
+      onUpdate?.(idea.id, idea.effort, newBusinessValue, idea.weight)
     } else {
       setBusinessValueValue(idea.businessValue.toString())
+    }
+    setEditingField(null)
+  }
+
+  const handleSaveWeight = () => {
+    const newWeight = parseInt(weightValue)
+    if (!isNaN(newWeight) && newWeight >= 1 && newWeight <= 10 && newWeight !== idea.weight) {
+      onUpdate?.(idea.id, idea.effort, idea.businessValue, newWeight)
+    } else {
+      setWeightValue(idea.weight.toString())
     }
     setEditingField(null)
   }
@@ -103,7 +122,7 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate }: IdeaC
         <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">{idea.description}</p>
       )}
       <div className="flex items-center justify-between gap-1 mt-1">
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {editingField === 'effort' ? (
             <Input
               ref={effortInputRef}
@@ -170,7 +189,54 @@ export function IdeaCard({ idea, style, isDragOverlay = false, onUpdate }: IdeaC
               V:{idea.businessValue}
             </Badge>
           )}
+          {editingField === 'weight' ? (
+            <Input
+              ref={weightInputRef}
+              type="number"
+              min="1"
+              max="10"
+              value={weightValue}
+              onChange={(e) => setWeightValue(e.target.value)}
+              onBlur={handleSaveWeight}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSaveWeight()
+                } else if (e.key === 'Escape') {
+                  setWeightValue(idea.weight.toString())
+                  setEditingField(null)
+                }
+              }}
+              className="h-6 w-14 text-xs px-1.5 py-0.5"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-xs px-1.5 py-0.5 cursor-pointer hover:bg-accent hover:scale-105 transition-transform"
+              onClick={(e) => {
+                e.stopPropagation()
+                setEditingField('weight')
+              }}
+              title="Click to edit weight/importance (1-10)"
+            >
+              W:{idea.weight}
+            </Badge>
+          )}
         </div>
+        {onResetPosition && (idea.positionX !== null || idea.positionY !== null) && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation()
+              onResetPosition(idea.id)
+            }}
+            title="Reset to grid position"
+          >
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        )}
       </div>
     </div>
   )

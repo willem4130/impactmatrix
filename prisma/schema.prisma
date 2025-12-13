@@ -78,6 +78,7 @@ model Idea {
   description     String?
   effort          Int          @default(5) // 1-10 scale
   businessValue   Int          @default(5) // 1-10 scale
+  weight          Int          @default(5) // 1-10 scale: importance/priority weight
   positionX       Float?       // Future: precise grid position
   positionY       Float?       // Future: precise grid position
   status          IdeaStatus   @default(DRAFT)
@@ -92,4 +93,5 @@ model Idea {
   @@index([status])
   @@index([categoryId])
   @@index([effort, businessValue])
+  @@index([weight])
 }

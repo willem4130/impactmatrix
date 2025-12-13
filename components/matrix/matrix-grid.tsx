@@ -30,10 +30,11 @@ type IdeaWithCategory = Idea & {
 interface MatrixGridProps {
   ideas: IdeaWithCategory[]
   onIdeaMove?: (ideaId: string, newEffort: number, newBusinessValue: number) => void
-  onIdeaUpdate?: (ideaId: string, newEffort: number, newBusinessValue: number) => void
+  onIdeaUpdate?: (ideaId: string, newEffort: number, newBusinessValue: number, newWeight: number) => void
+  onResetPosition?: (ideaId: string) => void
 }
 
-export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate }: MatrixGridProps) {
+export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate, onResetPosition }: MatrixGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -266,6 +267,7 @@ export function MatrixGrid({ ideas, onIdeaMove, onIdeaUpdate }: MatrixGridProps)
                 top: position.y,
               }}
               onUpdate={onIdeaUpdate}
+              onResetPosition={onResetPosition}
             />
           )
         })}

@@ -52,6 +52,7 @@ export const ideaRouter = createTRPCRouter({
         description: z.string().optional(),
         effort: z.number().int().min(1).max(10).default(5),
         businessValue: z.number().int().min(1).max(10).default(5),
+        weight: z.number().int().min(1).max(10).default(5),
         impactMatrixId: z.string(),
         categoryId: z.string().optional(),
         status: z.nativeEnum(IdeaStatus).default(IdeaStatus.DRAFT),
@@ -76,6 +77,7 @@ export const ideaRouter = createTRPCRouter({
         description: z.string().optional().nullable(),
         effort: z.number().int().min(1).max(10).optional(),
         businessValue: z.number().int().min(1).max(10).optional(),
+        weight: z.number().int().min(1).max(10).optional(),
         categoryId: z.string().optional().nullable(),
         status: z.nativeEnum(IdeaStatus).optional(),
       })
@@ -113,6 +115,37 @@ export const ideaRouter = createTRPCRouter({
         },
       })
       return idea
+    }),
+
+  // Reset idea position (clear manual positioning, use calculated position)
+  resetPosition: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const idea = await ctx.prisma.idea.update({
+        where: { id: input.id },
+        data: {
+          positionX: null,
+          positionY: null,
+        },
+        include: {
+          category: true,
+        },
+      })
+      return idea
+    }),
+
+  // Reset all positions for a matrix
+  resetAllPositions: publicProcedure
+    .input(z.object({ impactMatrixId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.idea.updateMany({
+        where: { impactMatrixId: input.impactMatrixId },
+        data: {
+          positionX: null,
+          positionY: null,
+        },
+      })
+      return { success: true }
     }),
 
   // Delete idea

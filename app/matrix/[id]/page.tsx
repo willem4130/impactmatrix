@@ -7,7 +7,7 @@ import { MatrixGrid } from '@/components/matrix/matrix-grid'
 import { IdeasSidePanel } from '@/components/matrix/ideas-side-panel'
 import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
 import { Button } from '@/components/ui/button'
-import { Plus, RefreshCw, ArrowLeft, List, Tag, PanelRight } from 'lucide-react'
+import { Plus, RefreshCw, ArrowLeft, List, Tag, PanelRight, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { Idea, IdeaStatus } from '@prisma/client'
@@ -57,6 +57,26 @@ export default function MatrixPage() {
     },
   })
 
+  const resetPositionMutation = api.idea.resetPosition.useMutation({
+    onSuccess: () => {
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+      toast.success('Position reset')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to reset position')
+    },
+  })
+
+  const resetAllPositionsMutation = api.idea.resetAllPositions.useMutation({
+    onSuccess: () => {
+      utils.idea.list.invalidate({ impactMatrixId: matrixId })
+      toast.success('All positions reset')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to reset positions')
+    },
+  })
+
   const handleRefresh = () => {
     refetch()
   }
@@ -66,6 +86,7 @@ export default function MatrixPage() {
     description?: string
     effort: number
     businessValue: number
+    weight: number
     categoryId?: string
     status: IdeaStatus
   }) => {
@@ -83,12 +104,21 @@ export default function MatrixPage() {
     })
   }
 
-  const handleIdeaUpdate = (ideaId: string, newEffort: number, newBusinessValue: number) => {
+  const handleIdeaUpdate = (ideaId: string, newEffort: number, newBusinessValue: number, newWeight: number) => {
     updateIdeaMutation.mutate({
       id: ideaId,
       effort: newEffort,
       businessValue: newBusinessValue,
+      weight: newWeight,
     })
+  }
+
+  const handleResetPosition = (ideaId: string) => {
+    resetPositionMutation.mutate({ id: ideaId })
+  }
+
+  const handleResetAllPositions = () => {
+    resetAllPositionsMutation.mutate({ impactMatrixId: matrixId })
   }
 
   const isLoading = matrixLoading || ideasLoading
@@ -166,6 +196,15 @@ export default function MatrixPage() {
               Ideas List
             </Button>
           </Link>
+          <Button
+            variant="outline"
+            onClick={handleResetAllPositions}
+            disabled={resetAllPositionsMutation.isPending}
+            title="Reset all ideas to grid positions"
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset All Positions
+          </Button>
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -182,7 +221,12 @@ export default function MatrixPage() {
         </div>
       ) : ideas && ideas.length > 0 ? (
         <div className="flex flex-col items-center">
-          <MatrixGrid ideas={ideas} onIdeaMove={handleIdeaMove} onIdeaUpdate={handleIdeaUpdate} />
+          <MatrixGrid
+            ideas={ideas}
+            onIdeaMove={handleIdeaMove}
+            onIdeaUpdate={handleIdeaUpdate}
+            onResetPosition={handleResetPosition}
+          />
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
               Showing {ideas.length} {ideas.length === 1 ? 'idea' : 'ideas'}

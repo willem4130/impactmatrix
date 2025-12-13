@@ -33,6 +33,7 @@ const ideaFormSchema = z.object({
   description: z.string().optional(),
   effort: z.number().int().min(1).max(10),
   businessValue: z.number().int().min(1).max(10),
+  weight: z.number().int().min(1).max(10),
   categoryId: z.string().optional(),
   status: z.nativeEnum(IdeaStatus),
 })
@@ -103,6 +104,7 @@ export function IdeaFormDialog({
       description: idea?.description || '',
       effort: idea?.effort || 5,
       businessValue: idea?.businessValue || 5,
+      weight: idea?.weight || 5,
       categoryId: idea?.categoryId || undefined,
       status: idea?.status || IdeaStatus.DRAFT,
     },
@@ -112,6 +114,7 @@ export function IdeaFormDialog({
   const selectedStatus = watch('status')
   const effortValue = watch('effort')
   const businessValue = watch('businessValue')
+  const weightValue = watch('weight')
 
   useEffect(() => {
     if (idea) {
@@ -120,6 +123,7 @@ export function IdeaFormDialog({
         description: idea.description || '',
         effort: idea.effort,
         businessValue: idea.businessValue,
+        weight: idea.weight,
         categoryId: idea.categoryId || undefined,
         status: idea.status,
       })
@@ -129,6 +133,7 @@ export function IdeaFormDialog({
         description: '',
         effort: 5,
         businessValue: 5,
+        weight: 5,
         categoryId: undefined,
         status: IdeaStatus.DRAFT,
       })
@@ -177,7 +182,7 @@ export function IdeaFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="effort">
                 Effort: {effortValue}
@@ -221,6 +226,28 @@ export function IdeaFormDialog({
                 <p className="text-sm text-destructive">
                   {errors.businessValue.message}
                 </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="weight">
+                Weight: {weightValue}
+                <span className="ml-2 text-xs text-muted-foreground">
+                  (1=Low, 10=High)
+                </span>
+              </Label>
+              <Input
+                id="weight"
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={weightValue}
+                onChange={(e) => setValue('weight', parseInt(e.target.value))}
+                className="h-2 cursor-pointer"
+              />
+              {errors.weight && (
+                <p className="text-sm text-destructive">{errors.weight.message}</p>
               )}
             </div>
           </div>
