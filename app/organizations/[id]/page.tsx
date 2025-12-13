@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Project } from '@prisma/client'
-import { Plus, Building2, FolderKanban, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Building2, FolderKanban, Pencil, Trash2, Copy } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
 import {
@@ -92,6 +92,16 @@ export default function OrganizationDetailPage() {
     },
   })
 
+  const duplicateMutation = api.project.duplicate.useMutation({
+    onSuccess: () => {
+      utils.organization.get.invalidate({ id: organizationId })
+      toast.success('Project duplicated successfully')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to duplicate project')
+    },
+  })
+
   const {
     register,
     handleSubmit,
@@ -118,6 +128,10 @@ export default function OrganizationDetailPage() {
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate({ id })
+  }
+
+  const handleDuplicate = (id: string) => {
+    duplicateMutation.mutate({ id })
   }
 
   const onSubmit = (data: ProjectFormData) => {
@@ -211,12 +225,15 @@ export default function OrganizationDetailPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(project)} title="Edit project">
                     <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDuplicate(project.id)} disabled={duplicateMutation.isPending} title="Duplicate project">
+                    <Copy className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" title="Delete project">
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </AlertDialogTrigger>

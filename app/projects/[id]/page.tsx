@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ImpactMatrix } from '@prisma/client'
-import { Plus, FolderKanban, Grid3x3, Pencil, Trash2, Lightbulb, Tag } from 'lucide-react'
+import { Plus, FolderKanban, Grid3x3, Pencil, Trash2, Lightbulb, Tag, Copy } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
 import {
@@ -94,6 +94,16 @@ export default function ProjectDetailPage() {
     },
   })
 
+  const duplicateMutation = api.impactMatrix.duplicate.useMutation({
+    onSuccess: () => {
+      utils.project.get.invalidate({ id: projectId })
+      toast.success('Impact matrix duplicated successfully')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to duplicate matrix')
+    },
+  })
+
   const {
     register,
     handleSubmit,
@@ -120,6 +130,10 @@ export default function ProjectDetailPage() {
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate({ id })
+  }
+
+  const handleDuplicate = (id: string) => {
+    duplicateMutation.mutate({ id })
   }
 
   const onSubmit = (data: MatrixFormData) => {
@@ -228,12 +242,15 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(matrix)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(matrix)} title="Edit matrix">
                     <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDuplicate(matrix.id)} disabled={duplicateMutation.isPending} title="Duplicate matrix">
+                    <Copy className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" title="Delete matrix">
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </AlertDialogTrigger>

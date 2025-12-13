@@ -140,12 +140,33 @@ export default function MatrixPage() {
   }
 
   const handleIdeaUpdate = (ideaId: string, newEffort: number, newBusinessValue: number, newWeight: number) => {
-    updateIdeaMutation.mutate({
-      id: ideaId,
-      effort: newEffort,
-      businessValue: newBusinessValue,
-      weight: newWeight,
-    })
+    const idea = ideas?.find((i) => i.id === ideaId)
+    const hasCustomPosition = idea?.positionX !== null || idea?.positionY !== null
+    const effortChanged = idea && idea.effort !== newEffort
+    const businessValueChanged = idea && idea.businessValue !== newBusinessValue
+
+    // Clear custom position if effort or businessValue changed
+    // This ensures the card moves to the new grid position
+    if (hasCustomPosition && (effortChanged || businessValueChanged)) {
+      updateIdeaMutation.mutate({
+        id: ideaId,
+        effort: newEffort,
+        businessValue: newBusinessValue,
+        weight: newWeight,
+      }, {
+        onSuccess: () => {
+          // After updating scores, reset position to match new grid location
+          resetPositionMutation.mutate({ id: ideaId })
+        }
+      })
+    } else {
+      updateIdeaMutation.mutate({
+        id: ideaId,
+        effort: newEffort,
+        businessValue: newBusinessValue,
+        weight: newWeight,
+      })
+    }
   }
 
   const handleResetPosition = (ideaId: string) => {
