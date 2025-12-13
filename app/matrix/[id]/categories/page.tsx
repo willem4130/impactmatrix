@@ -2,13 +2,22 @@
 
 import { useState } from 'react'
 import { Category } from '@prisma/client'
-import { Plus, ArrowLeft } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { CategoryCard } from '@/components/categories/category-card'
 import { CategoryFormDialog } from '@/components/categories/category-form-dialog'
 import { toast } from 'sonner'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function MatrixCategoriesPage() {
   const params = useParams()
@@ -111,17 +120,47 @@ export default function MatrixCategoriesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" className="mb-4" onClick={() => router.push(`/matrix/${matrixId}`)}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Matrix
-      </Button>
+      {/* Breadcrumb Navigation */}
+      {matrix && (
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={`/organizations/${matrix.project.organizationId}`}>
+                  {matrix.project.organization.name}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={`/projects/${matrix.projectId}`}>
+                  {matrix.project.name}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={`/matrix/${matrixId}`}>
+                  {matrix.name}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Categories</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
 
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Categories</h1>
-          <p className="text-muted-foreground mt-1">
-            {matrix?.name || 'Manage categories in this matrix'}
-          </p>
+          {matrix && (
+            <p className="text-muted-foreground mt-1">{matrix.name}</p>
+          )}
         </div>
         <Button onClick={handleCreateNew}>
           <Plus className="mr-2 h-4 w-4" />

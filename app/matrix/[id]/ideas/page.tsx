@@ -2,9 +2,17 @@
 
 import { useState } from 'react'
 import { Idea, IdeaStatus } from '@prisma/client'
-import { Plus, Filter, X, ArrowLeft } from 'lucide-react'
+import { Plus, Filter, X } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import {
   Select,
   SelectContent,
@@ -12,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import Link from 'next/link'
 import { IdeasTable } from '@/components/ideas/ideas-table'
 import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
 import { toast } from 'sonner'
@@ -141,17 +150,47 @@ export default function MatrixIdeasPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" className="mb-4" onClick={() => router.push(`/matrix/${matrixId}`)}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Matrix
-      </Button>
+      {/* Breadcrumb Navigation */}
+      {matrix && (
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={`/organizations/${matrix.project.organizationId}`}>
+                  {matrix.project.organization.name}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={`/projects/${matrix.projectId}`}>
+                  {matrix.project.name}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={`/matrix/${matrixId}`}>
+                  {matrix.name}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Ideas</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
 
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Ideas</h1>
-          <p className="text-muted-foreground mt-1">
-            {matrix?.name || 'Manage ideas in this matrix'}
-          </p>
+          {matrix && (
+            <p className="text-muted-foreground mt-1">{matrix.name}</p>
+          )}
         </div>
         <Button onClick={handleCreateNew}>
           <Plus className="mr-2 h-4 w-4" />

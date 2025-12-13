@@ -3,9 +3,17 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ImpactMatrix } from '@prisma/client'
-import { Plus, ArrowLeft, FolderKanban, Grid3x3, Pencil, Trash2, Lightbulb, Tag } from 'lucide-react'
+import { Plus, FolderKanban, Grid3x3, Pencil, Trash2, Lightbulb, Tag } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,10 +169,22 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" className="mb-4" onClick={() => router.push(`/organizations/${project.organizationId}`)}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to {project.organization.name}
-      </Button>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/organizations/${project.organizationId}`}>
+                {project.organization.name}
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{project.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="mb-8 flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -176,9 +196,6 @@ export default function ProjectDetailPage() {
             {project.description && (
               <p className="text-muted-foreground mt-1">{project.description}</p>
             )}
-            <p className="text-sm text-muted-foreground mt-1">
-              in {project.organization.name}
-            </p>
           </div>
         </div>
         <Button onClick={handleCreateNew}>

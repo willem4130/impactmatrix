@@ -3,9 +3,15 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Project } from '@prisma/client'
-import { Plus, ArrowLeft, Building2, FolderKanban, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Building2, FolderKanban, Pencil, Trash2 } from 'lucide-react'
 import { api } from '@/trpc/react'
 import { Button } from '@/components/ui/button'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,10 +167,14 @@ export default function OrganizationDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" className="mb-4" onClick={() => router.push('/organizations')}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Organizations
-      </Button>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{organization.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="mb-8 flex items-start justify-between">
         <div className="flex items-center gap-4">
