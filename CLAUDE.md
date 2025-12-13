@@ -140,9 +140,76 @@ Full hierarchical structure with cascade deletes:
 
 **Key Files:**
 - `/lib/grid-utils.ts` - Grid configuration, drift detection, position utilities
+- `/lib/export-utils.ts` - Excel workbook generation (Ideas, Categories, Metadata, Filter Presets sheets)
 - `/components/matrix/idea-card.tsx` - Card with inline editing (E/V/W) and drift indicator
 - `/components/matrix/matrix-grid.tsx` - Grid with free positioning support
 - `/components/matrix/ideas-side-panel.tsx` - Side panel with CRUD and drift display
+- `/components/export/export-button.tsx` - Excel export with popover UI
 - `/components/ideas/idea-form-dialog.tsx` - Idea form with weight slider and inline category creation
-- `/app/matrix/[id]/page.tsx` - Matrix page with custom positioning, side panel, batch reset
+- `/app/matrix/[id]/page.tsx` - Matrix page with custom positioning, side panel, batch reset, export
 - `/server/api/routers/idea.ts` - tRPC router with updateCustomPosition, resetPosition, resetAllPositions
+- `/server/api/routers/export.ts` - Excel export tRPC route with base64 download
+
+## Production Deployment
+
+**CLI-First Philosophy:**
+- **ALWAYS use CLI tools where possible** - Never use web dashboards for tasks that can be automated
+- Automation > Manual processes - Scripts and commands over point-and-click
+- Vercel CLI, Git CLI, NPM CLI, Neon CLI are preferred over web interfaces
+- Document all CLI commands for reproducibility
+
+**Infrastructure:**
+- **Hosting:** Vercel (https://vercel.com/willem4130s-projects/impactmatrix)
+- **Database:** Neon PostgreSQL (serverless, auto-scaling, AWS US East 1)
+- **Repository:** https://github.com/willem4130/impactmatrix
+
+**Environment Variables (Production):**
+- `DATABASE_URL` - Neon PostgreSQL connection string
+- `DIRECT_DATABASE_URL` - Direct connection for Prisma migrations
+- `POSTGRES_URL` - Alternative PostgreSQL connection string
+
+**Adding Environment Variables via CLI:**
+```bash
+# Correct syntax: echo value | vercel env add <name> <environment>
+DB_URL="postgresql://user:pass@host:port/db"
+echo "$DB_URL" | vercel env add DATABASE_URL production
+echo "$DB_URL" | vercel env add DIRECT_DATABASE_URL production
+echo "$DB_URL" | vercel env add POSTGRES_URL production
+
+# Verify
+vercel env ls
+
+# Deploy with new env vars
+vercel --prod
+```
+
+**Auto-Deployment:**
+- Push to `main` branch triggers automatic Vercel deployment
+- Build process: `prisma generate && next build`
+- Migrations: Run manually with `prisma migrate deploy` against production DATABASE_URL
+
+**Database Seeding:**
+```bash
+# Seed production database (run once after initial deployment)
+DATABASE_URL="<neon-connection-string>" npm run db:seed
+```
+
+**Production URLs:**
+- Live App: https://impactmatrix.vercel.app
+- Dashboard: https://vercel.com/willem4130s-projects/impactmatrix
+- Repository: https://github.com/willem4130/impactmatrix
+
+**Common Commands:**
+```bash
+# Deploy to production
+vercel --prod
+
+# Check deployment logs
+vercel logs <deployment-url>
+
+# List environment variables
+vercel env ls
+
+# Pull environment variables locally
+vercel env pull .env.production
+```
