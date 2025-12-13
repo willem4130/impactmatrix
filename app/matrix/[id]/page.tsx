@@ -7,6 +7,7 @@ import { MatrixGrid } from '@/components/matrix/matrix-grid'
 import { MatrixFilters } from '@/components/matrix/matrix-filters'
 import { IdeasSidePanel } from '@/components/matrix/ideas-side-panel'
 import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
+import { ExportButton } from '@/components/export/export-button'
 import { Button } from '@/components/ui/button'
 import {
   Breadcrumb,
@@ -278,6 +279,7 @@ export default function MatrixPage() {
             <RotateCcw className="mr-2 h-4 w-4" />
             Reset All Positions
           </Button>
+          <ExportButton matrixId={matrixId} />
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
