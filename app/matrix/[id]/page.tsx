@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/trpc/react'
 import { MatrixGrid } from '@/components/matrix/matrix-grid'
+import { MatrixFilters } from '@/components/matrix/matrix-filters'
 import { IdeasSidePanel } from '@/components/matrix/ideas-side-panel'
 import { IdeaFormDialog } from '@/components/ideas/idea-form-dialog'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,8 @@ import {
 import { Plus, RefreshCw, List, Tag, PanelRight, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { Idea, IdeaStatus } from '@prisma/client'
+import { Idea, IdeaStatus, Category } from '@prisma/client'
+import type { IdeaWithCategory } from '@/lib/filter-utils'
 
 export default function MatrixPage() {
   const params = useParams()
@@ -26,11 +28,18 @@ export default function MatrixPage() {
   const matrixId = params.id as string
   const [showSidePanel, setShowSidePanel] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [filteredIdeas, setFilteredIdeas] = useState<IdeaWithCategory[]>([])
 
   const utils = api.useUtils()
 
   const { data: matrix, isLoading: matrixLoading, error: matrixError } = api.impactMatrix.get.useQuery({ id: matrixId })
   const { data: ideas, isLoading: ideasLoading, error: ideasError, refetch } = api.idea.list.useQuery({ impactMatrixId: matrixId })
+  const { data: categories } = api.category.list.useQuery({ impactMatrixId: matrixId })
+
+  // Update filtered ideas when source ideas change
+  useEffect(() => {
+    setFilteredIdeas(ideas || [])
+  }, [ideas])
 
   const updatePositionMutation = api.idea.updatePosition.useMutation({
     onSuccess: () => {
@@ -263,20 +272,31 @@ export default function MatrixPage() {
           </div>
         </div>
       ) : ideas && ideas.length > 0 ? (
-        <div className="flex flex-col items-center">
-          <MatrixGrid
+        <>
+          <MatrixFilters
             ideas={ideas}
-            onIdeaMove={handleIdeaMove}
-            onCustomPosition={handleCustomPosition}
-            onIdeaUpdate={handleIdeaUpdate}
-            onResetPosition={handleResetPosition}
+            categories={categories || []}
+            onFilterChange={setFilteredIdeas}
           />
-          <div className="mt-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Showing {ideas.length} {ideas.length === 1 ? 'idea' : 'ideas'}
-            </p>
+
+          <div className="flex flex-col items-center">
+            <MatrixGrid
+              ideas={filteredIdeas}
+              onIdeaMove={handleIdeaMove}
+              onCustomPosition={handleCustomPosition}
+              onIdeaUpdate={handleIdeaUpdate}
+              onResetPosition={handleResetPosition}
+            />
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredIdeas.length} of {ideas.length} {ideas.length === 1 ? 'idea' : 'ideas'}
+                {filteredIdeas.length < ideas.length && (
+                  <span className="ml-1">({ideas.length - filteredIdeas.length} filtered out)</span>
+                )}
+              </p>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <p className="text-muted-foreground mb-4">No ideas yet</p>
@@ -328,7 +348,7 @@ export default function MatrixPage() {
 
       {/* Ideas Side Panel */}
       {showSidePanel && ideas && (
-        <IdeasSidePanel ideas={ideas} matrixId={matrixId} onClose={() => setShowSidePanel(false)} />
+        <IdeasSidePanel ideas={filteredIdeas} matrixId={matrixId} onClose={() => setShowSidePanel(false)} />
       )}
 
       {/* Create Idea Dialog */}
